@@ -12,37 +12,43 @@ const client = redis.createClient({
 const app = express();
 const port = process.env.APP_PORT || 3001;
 app.use(bodyParser.json());
-
-// app.get("/", (req, res) => {
-//   res.send("Hello World\n");
-// });
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "*");
+  res.header("Access-Control-Allow-Methods", "*");
+  next();
+});
 
 app.get("/load", async (req, res) => {
   try {
-    let exists = await client.exists("todo_list");
     let todo_list;
+    let exists = await client.exists("todo_list");
     if (exists == 0) {
       todo_list = [];
       await client.set("todo_list", JSON.stringify(todo_list));
     } else {
       todo_list = await client.get("todo_list");
     }
+    console.log("loaded");
+    // console.log(todo_list);
+    const todo = JSON.parse(todo_list);
+    res.json(todo);
   } catch (error) {
     console.log(error);
     res.send(error);
   }
-
-  console.log(todo_list);
-  res.send(JSON.stringify(todo_list));
 });
 
 app.post("/save", async (req, res) => {
   try {
     let todo_list = req.body.todo_list;
+    console.log("inside save: ");
+    console.log(todo_list);
 
     await client.set("todo_list", JSON.stringify(todo_list));
 
-    res.send({ status: "save successful" });
+    console.log("saved");
+    res.json({ status: "save successful" });
   } catch (err) {
     console.log(err);
     res.send(err);
